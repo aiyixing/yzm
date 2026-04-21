@@ -75,21 +75,16 @@
         .slider-wrapper {
             position: relative;
             width: 340px;
-            height: 50px;
             margin: 0 auto;
-            background-color: #f5f7fa;
-            border-radius: 25px;
-            overflow: hidden;
             margin-bottom: 20px;
         }
 
         .slider-track {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: relative;
+            height: 6px;
             background-color: #e4e7ed;
+            border-radius: 3px;
+            margin-bottom: 20px;
         }
 
         .slider-fill {
@@ -98,47 +93,41 @@
             left: 0;
             height: 100%;
             background-color: #409eff;
-            border-radius: 25px;
+            border-radius: 3px;
             transition: width 0.05s ease-out;
         }
 
         .slider-button {
             position: absolute;
             top: 50%;
-            width: 46px;
-            height: 46px;
-            background-color: #409eff;
+            width: 36px;
+            height: 36px;
+            background-color: #fff;
+            border: 3px solid #409eff;
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #fff;
-            font-size: 20px;
             cursor: grab;
             transform: translate(-50%, -50%);
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
             z-index: 20;
-            transition: background-color 0.2s;
+            transition: border-color 0.2s, box-shadow 0.2s;
         }
 
         .slider-button:hover {
-            background-color: #66b1ff;
+            border-color: #66b1ff;
+            box-shadow: 0 3px 12px rgba(64, 158, 255, 0.4);
         }
 
         .slider-button:active {
             cursor: grabbing;
-            background-color: #3a8ee6;
+            border-color: #3a8ee6;
         }
 
         .slider-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: #909399;
-            font-size: 14px;
-            pointer-events: none;
-            z-index: 5;
+            text-align: center;
+            color: #606266;
+            font-size: 20px;
+            margin-top: 8px;
+            font-weight: 500;
         }
 
         .slider-text.success {
@@ -154,7 +143,8 @@
         }
 
         .slider-button.success {
-            background-color: #67c23a;
+            border-color: #67c23a;
+            background-color: #f0f9eb;
         }
 
         .slider-fill.error {
@@ -162,7 +152,8 @@
         }
 
         .slider-button.error {
-            background-color: #f56c6c;
+            border-color: #f56c6c;
+            background-color: #fef0f0;
         }
 
         .refresh-container {
@@ -170,6 +161,7 @@
             justify-content: center;
             gap: 10px;
             flex-wrap: wrap;
+            margin-top: 10px;
         }
 
         .refresh-button, .auto-verify-button {
@@ -208,7 +200,7 @@
 
         .message {
             text-align: center;
-            margin-top: 15px;
+            margin-top: 10px;
             font-size: 14px;
             min-height: 20px;
         }
@@ -222,23 +214,7 @@
         }
 
         .slider-icon {
-            width: 20px;
-            height: 20px;
-            display: inline-block;
-        }
-
-        .slider-icon::after {
-            content: '→';
-            font-size: 20px;
-            font-weight: bold;
-        }
-
-        .slider-icon.success::after {
-            content: '✓';
-        }
-
-        .slider-icon.error::after {
-            content: '✕';
+            display: none;
         }
 
         @keyframes shake {
@@ -281,12 +257,13 @@
         </div>
         
         <div class="slider-wrapper">
-            <div class="slider-track"></div>
-            <div id="sliderFill" class="slider-fill"></div>
-            <div id="sliderText" class="slider-text">拖动滑块完成拼图</div>
-            <div id="sliderButton" class="slider-button">
-                <span id="sliderIcon" class="slider-icon"></span>
+            <div class="slider-track">
+                <div id="sliderFill" class="slider-fill"></div>
+                <div id="sliderButton" class="slider-button">
+                    <span id="sliderIcon" class="slider-icon"></span>
+                </div>
             </div>
+            <div id="sliderText" class="slider-text">拖动滑块完成拼图</div>
         </div>
         
         <div id="message" class="message"></div>
@@ -303,17 +280,16 @@
     </div>
 
     <script>
-        // 配置参数
         const config = {
             imageWidth: 340,
             imageHeight: 240,
-            puzzleWidth: 100,
-            puzzleHeight: 100,
+            puzzleWidth: 50,
+            puzzleHeight: 50,
             tolerance: 10,
-            sliderMax: 290
+            sliderMax: 305,
+            buttonRadius: 18
         };
 
-        // 状态管理
         const state = {
             imageUrl: '',
             maskLeft: 0,
@@ -336,7 +312,6 @@
             ]
         };
 
-        // DOM元素
         const elements = {
             verifyImage: document.getElementById('verifyImage'),
             verifyMask: document.getElementById('verifyMask'),
@@ -352,7 +327,6 @@
             imageContainer: document.getElementById('imageContainer')
         };
 
-        // 生成随机位置
         function generateRandomPosition() {
             state.maskLeft = Math.floor(Math.random() * (config.imageWidth - config.puzzleWidth - 20)) + 20;
             state.maskTop = Math.floor(Math.random() * (config.imageHeight - config.puzzleHeight - 20)) + 20;
@@ -360,14 +334,12 @@
             state.sliderValue = 0;
         }
 
-        // 加载随机图片
         function loadRandomImage() {
             const randomIndex = Math.floor(Math.random() * state.imageList.length);
             state.imageUrl = state.imageList[randomIndex] + '&t=' + Date.now();
             elements.verifyImage.src = state.imageUrl;
         }
 
-        // 图片加载完成
         function onImageLoad() {
             generateRandomPosition();
             updateUI();
@@ -378,7 +350,6 @@
             }
         }
 
-        // 更新UI
         function updateUI() {
             elements.verifyMask.style.left = state.maskLeft + 'px';
             elements.verifyMask.style.top = state.maskTop + 'px';
@@ -393,15 +364,14 @@
             elements.verifyPuzzle.style.backgroundPosition = `-${state.maskLeft}px -${state.maskTop}px`;
         }
 
-        // 重置滑块
         function resetSlider() {
             state.sliderValue = 0;
             state.puzzleLeft = 0;
             state.isVerified = false;
             state.isVerifying = false;
             
-            elements.sliderFill.style.width = '0';
-            elements.sliderButton.style.left = '23px';
+            elements.sliderFill.style.width = config.buttonRadius + 'px';
+            elements.sliderButton.style.left = config.buttonRadius + 'px';
             elements.sliderText.textContent = '拖动滑块完成拼图';
             elements.sliderText.className = 'slider-text';
             elements.sliderFill.className = 'slider-fill';
@@ -413,21 +383,19 @@
             updateUI();
         }
 
-        // 滑块输入
         function onSliderInput(value) {
             if (state.isVerifying || state.isVerified) return;
             
             state.sliderValue = value;
             state.puzzleLeft = value;
             
-            elements.sliderFill.style.width = (value + 23) + 'px';
-            elements.sliderButton.style.left = (value + 23) + 'px';
+            elements.sliderFill.style.width = (value + config.buttonRadius) + 'px';
+            elements.sliderButton.style.left = (value + config.buttonRadius) + 'px';
             elements.sliderText.textContent = '松开滑块完成验证';
             
             updateUI();
         }
 
-        // 验证拼图
         function verifyPuzzle(value) {
             state.isVerifying = true;
             
@@ -443,7 +411,6 @@
             }, 300);
         }
 
-        // 显示成功
         function showSuccess() {
             state.isVerified = true;
             
@@ -457,7 +424,6 @@
             elements.message.className = 'message success';
         }
 
-        // 显示错误
         function showError() {
             elements.sliderText.textContent = '验证失败，请重试';
             elements.sliderText.className = 'slider-text error';
@@ -478,13 +444,11 @@
             }, 1500);
         }
 
-        // 刷新验证码
         function refreshVerify() {
             resetSlider();
             loadRandomImage();
         }
 
-        // 自动验证
         function autoVerify() {
             if (state.isVerifying || state.isVerified) return;
             
@@ -524,7 +488,6 @@
             return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
         }
 
-        // 切换自动验证
         function toggleAutoVerify() {
             state.autoVerifyEnabled = !state.autoVerifyEnabled;
             
@@ -545,7 +508,6 @@
             elements.autoStatus = document.getElementById('autoStatus');
         }
 
-        // 滑块交互
         function initSlider() {
             let startX = 0;
             let startLeft = 0;
@@ -607,7 +569,6 @@
             });
         }
 
-        // 初始化
         function init() {
             elements.verifyImage.addEventListener('load', onImageLoad);
             elements.refreshButton.addEventListener('click', refreshVerify);
