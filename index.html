@@ -1,0 +1,632 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图片验证码</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background-color: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .verify-container {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .verify-title {
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: #303133;
+            margin-bottom: 30px;
+        }
+
+        .verify-image-container {
+            position: relative;
+            width: 340px;
+            height: 240px;
+            margin: 0 auto;
+            border: 2px solid #dcdfe6;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .verify-image {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .verify-mask {
+            position: absolute;
+            background-color: rgba(0, 0, 0, 0.6);
+            border: 2px dashed #fff;
+            border-radius: 4px;
+        }
+
+        .verify-puzzle {
+            position: absolute;
+            border: 2px solid #409eff;
+            border-radius: 4px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            background-size: 340px 240px;
+            z-index: 10;
+            transition: left 0.05s ease-out;
+        }
+
+        .slider-wrapper {
+            position: relative;
+            width: 340px;
+            height: 50px;
+            margin: 0 auto;
+            background-color: #f5f7fa;
+            border-radius: 25px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .slider-track {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #e4e7ed;
+        }
+
+        .slider-fill {
+            position: absolute;
+            top: 0;
+            left: 0;
+            height: 100%;
+            background-color: #409eff;
+            border-radius: 25px;
+            transition: width 0.05s ease-out;
+        }
+
+        .slider-button {
+            position: absolute;
+            top: 50%;
+            width: 46px;
+            height: 46px;
+            background-color: #409eff;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 20px;
+            cursor: grab;
+            transform: translate(-50%, -50%);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            z-index: 20;
+            transition: background-color 0.2s;
+        }
+
+        .slider-button:hover {
+            background-color: #66b1ff;
+        }
+
+        .slider-button:active {
+            cursor: grabbing;
+            background-color: #3a8ee6;
+        }
+
+        .slider-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: #909399;
+            font-size: 14px;
+            pointer-events: none;
+            z-index: 5;
+        }
+
+        .slider-text.success {
+            color: #67c23a;
+        }
+
+        .slider-text.error {
+            color: #f56c6c;
+        }
+
+        .slider-fill.success {
+            background-color: #67c23a;
+        }
+
+        .slider-button.success {
+            background-color: #67c23a;
+        }
+
+        .slider-fill.error {
+            background-color: #f56c6c;
+        }
+
+        .slider-button.error {
+            background-color: #f56c6c;
+        }
+
+        .refresh-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .refresh-button, .auto-verify-button {
+            padding: 12px 24px;
+            background-color: #409eff;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .refresh-button:hover, .auto-verify-button:hover {
+            background-color: #66b1ff;
+        }
+
+        .refresh-button:active, .auto-verify-button:active {
+            background-color: #3a8ee6;
+        }
+
+        .auto-verify-button {
+            background-color: #67c23a;
+        }
+
+        .auto-verify-button:hover {
+            background-color: #85ce61;
+        }
+
+        .auto-verify-button:active {
+            background-color: #5daf34;
+        }
+
+        .message {
+            text-align: center;
+            margin-top: 15px;
+            font-size: 14px;
+            min-height: 20px;
+        }
+
+        .message.success {
+            color: #67c23a;
+        }
+
+        .message.error {
+            color: #f56c6c;
+        }
+
+        .slider-icon {
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+        }
+
+        .slider-icon::after {
+            content: '→';
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .slider-icon.success::after {
+            content: '✓';
+        }
+
+        .slider-icon.error::after {
+            content: '✕';
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-5px); }
+            75% { transform: translateX(5px); }
+        }
+
+        .shake {
+            animation: shake 0.3s ease-in-out;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            margin-left: 8px;
+        }
+
+        .status-badge.running {
+            background-color: #fdf6ec;
+            color: #e6a23c;
+        }
+
+        .status-badge.stopped {
+            background-color: #f4f4f5;
+            color: #909399;
+        }
+    </style>
+</head>
+<body>
+    <div class="verify-container">
+        <h2 class="verify-title">图片验证码</h2>
+        
+        <div class="verify-image-container" id="imageContainer">
+            <img id="verifyImage" class="verify-image" alt="验证图片">
+            <div id="verifyMask" class="verify-mask"></div>
+            <div id="verifyPuzzle" class="verify-puzzle"></div>
+        </div>
+        
+        <div class="slider-wrapper">
+            <div class="slider-track"></div>
+            <div id="sliderFill" class="slider-fill"></div>
+            <div id="sliderText" class="slider-text">拖动滑块完成拼图</div>
+            <div id="sliderButton" class="slider-button">
+                <span id="sliderIcon" class="slider-icon"></span>
+            </div>
+        </div>
+        
+        <div id="message" class="message"></div>
+        
+        <div class="refresh-container">
+            <button id="refreshButton" class="refresh-button">
+                <span>⟳</span> 刷新验证码
+            </button>
+            <button id="autoVerifyButton" class="auto-verify-button">
+                <span>▶</span> 自动验证 
+                <span id="autoStatus" class="status-badge stopped">已关闭</span>
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 配置参数
+        const config = {
+            imageWidth: 340,
+            imageHeight: 240,
+            puzzleWidth: 100,
+            puzzleHeight: 100,
+            tolerance: 10,
+            sliderMax: 290
+        };
+
+        // 状态管理
+        const state = {
+            imageUrl: '',
+            maskLeft: 0,
+            maskTop: 0,
+            puzzleLeft: 0,
+            sliderValue: 0,
+            isDragging: false,
+            isVerifying: false,
+            isVerified: false,
+            autoVerifyEnabled: false,
+            imageList: [
+                'https://picsum.photos/340/240?random=1',
+                'https://picsum.photos/340/240?random=2',
+                'https://picsum.photos/340/240?random=3',
+                'https://picsum.photos/340/240?random=4',
+                'https://picsum.photos/340/240?random=5',
+                'https://picsum.photos/340/240?random=6',
+                'https://picsum.photos/340/240?random=7',
+                'https://picsum.photos/340/240?random=8'
+            ]
+        };
+
+        // DOM元素
+        const elements = {
+            verifyImage: document.getElementById('verifyImage'),
+            verifyMask: document.getElementById('verifyMask'),
+            verifyPuzzle: document.getElementById('verifyPuzzle'),
+            sliderButton: document.getElementById('sliderButton'),
+            sliderFill: document.getElementById('sliderFill'),
+            sliderText: document.getElementById('sliderText'),
+            sliderIcon: document.getElementById('sliderIcon'),
+            message: document.getElementById('message'),
+            refreshButton: document.getElementById('refreshButton'),
+            autoVerifyButton: document.getElementById('autoVerifyButton'),
+            autoStatus: document.getElementById('autoStatus'),
+            imageContainer: document.getElementById('imageContainer')
+        };
+
+        // 生成随机位置
+        function generateRandomPosition() {
+            state.maskLeft = Math.floor(Math.random() * (config.imageWidth - config.puzzleWidth - 20)) + 20;
+            state.maskTop = Math.floor(Math.random() * (config.imageHeight - config.puzzleHeight - 20)) + 20;
+            state.puzzleLeft = 0;
+            state.sliderValue = 0;
+        }
+
+        // 加载随机图片
+        function loadRandomImage() {
+            const randomIndex = Math.floor(Math.random() * state.imageList.length);
+            state.imageUrl = state.imageList[randomIndex] + '&t=' + Date.now();
+            elements.verifyImage.src = state.imageUrl;
+        }
+
+        // 图片加载完成
+        function onImageLoad() {
+            generateRandomPosition();
+            updateUI();
+            resetSlider();
+            
+            if (state.autoVerifyEnabled) {
+                setTimeout(autoVerify, 500);
+            }
+        }
+
+        // 更新UI
+        function updateUI() {
+            elements.verifyMask.style.left = state.maskLeft + 'px';
+            elements.verifyMask.style.top = state.maskTop + 'px';
+            elements.verifyMask.style.width = config.puzzleWidth + 'px';
+            elements.verifyMask.style.height = config.puzzleHeight + 'px';
+
+            elements.verifyPuzzle.style.left = state.puzzleLeft + 'px';
+            elements.verifyPuzzle.style.top = state.maskTop + 'px';
+            elements.verifyPuzzle.style.width = config.puzzleWidth + 'px';
+            elements.verifyPuzzle.style.height = config.puzzleHeight + 'px';
+            elements.verifyPuzzle.style.backgroundImage = `url(${state.imageUrl})`;
+            elements.verifyPuzzle.style.backgroundPosition = `-${state.maskLeft}px -${state.maskTop}px`;
+        }
+
+        // 重置滑块
+        function resetSlider() {
+            state.sliderValue = 0;
+            state.puzzleLeft = 0;
+            state.isVerified = false;
+            state.isVerifying = false;
+            
+            elements.sliderFill.style.width = '0';
+            elements.sliderButton.style.left = '23px';
+            elements.sliderText.textContent = '拖动滑块完成拼图';
+            elements.sliderText.className = 'slider-text';
+            elements.sliderFill.className = 'slider-fill';
+            elements.sliderButton.className = 'slider-button';
+            elements.sliderIcon.className = 'slider-icon';
+            elements.message.textContent = '';
+            elements.message.className = 'message';
+            
+            updateUI();
+        }
+
+        // 滑块输入
+        function onSliderInput(value) {
+            if (state.isVerifying || state.isVerified) return;
+            
+            state.sliderValue = value;
+            state.puzzleLeft = value;
+            
+            elements.sliderFill.style.width = (value + 23) + 'px';
+            elements.sliderButton.style.left = (value + 23) + 'px';
+            elements.sliderText.textContent = '松开滑块完成验证';
+            
+            updateUI();
+        }
+
+        // 验证拼图
+        function verifyPuzzle(value) {
+            state.isVerifying = true;
+            
+            const error = Math.abs(value - state.maskLeft);
+            
+            setTimeout(() => {
+                if (error <= config.tolerance) {
+                    showSuccess();
+                } else {
+                    showError();
+                }
+                state.isVerifying = false;
+            }, 300);
+        }
+
+        // 显示成功
+        function showSuccess() {
+            state.isVerified = true;
+            
+            elements.sliderText.textContent = '验证成功';
+            elements.sliderText.className = 'slider-text success';
+            elements.sliderFill.className = 'slider-fill success';
+            elements.sliderButton.className = 'slider-button success';
+            elements.sliderIcon.className = 'slider-icon success';
+            
+            elements.message.textContent = '✓ 验证成功！';
+            elements.message.className = 'message success';
+        }
+
+        // 显示错误
+        function showError() {
+            elements.sliderText.textContent = '验证失败，请重试';
+            elements.sliderText.className = 'slider-text error';
+            elements.sliderFill.className = 'slider-fill error';
+            elements.sliderButton.className = 'slider-button error';
+            elements.sliderIcon.className = 'slider-icon error';
+            
+            elements.imageContainer.classList.add('shake');
+            setTimeout(() => {
+                elements.imageContainer.classList.remove('shake');
+            }, 300);
+            
+            elements.message.textContent = '✕ 验证失败，请重试';
+            elements.message.className = 'message error';
+            
+            setTimeout(() => {
+                resetSlider();
+            }, 1500);
+        }
+
+        // 刷新验证码
+        function refreshVerify() {
+            resetSlider();
+            loadRandomImage();
+        }
+
+        // 自动验证
+        function autoVerify() {
+            if (state.isVerifying || state.isVerified) return;
+            
+            const targetPosition = state.maskLeft;
+            const startPosition = state.sliderValue;
+            const distance = targetPosition - startPosition;
+            const duration = 1000;
+            const startTime = Date.now();
+            
+            function animate() {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                
+                const easedProgress = easeInOutQuad(progress);
+                const currentPosition = startPosition + (distance * easedProgress);
+                
+                onSliderInput(Math.floor(currentPosition));
+                
+                if (progress < 1) {
+                    requestAnimationFrame(animate);
+                } else {
+                    onSliderInput(targetPosition);
+                    verifyPuzzle(targetPosition);
+                    
+                    if (state.autoVerifyEnabled && state.isVerified) {
+                        setTimeout(() => {
+                            refreshVerify();
+                        }, 2000);
+                    }
+                }
+            }
+            
+            animate();
+        }
+
+        function easeInOutQuad(t) {
+            return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t;
+        }
+
+        // 切换自动验证
+        function toggleAutoVerify() {
+            state.autoVerifyEnabled = !state.autoVerifyEnabled;
+            
+            if (state.autoVerifyEnabled) {
+                elements.autoStatus.textContent = '运行中';
+                elements.autoStatus.className = 'status-badge running';
+                elements.autoVerifyButton.innerHTML = '<span>⏸</span> 停止自动验证 <span id="autoStatus" class="status-badge running">运行中</span>';
+                
+                if (!state.isVerified && !state.isVerifying) {
+                    autoVerify();
+                }
+            } else {
+                elements.autoStatus.textContent = '已关闭';
+                elements.autoStatus.className = 'status-badge stopped';
+                elements.autoVerifyButton.innerHTML = '<span>▶</span> 自动验证 <span id="autoStatus" class="status-badge stopped">已关闭</span>';
+            }
+            
+            elements.autoStatus = document.getElementById('autoStatus');
+        }
+
+        // 滑块交互
+        function initSlider() {
+            let startX = 0;
+            let startLeft = 0;
+            
+            elements.sliderButton.addEventListener('mousedown', (e) => {
+                if (state.isVerifying || state.isVerified) return;
+                state.isDragging = true;
+                startX = e.clientX;
+                startLeft = state.sliderValue;
+                
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+            });
+            
+            function onMouseMove(e) {
+                if (!state.isDragging) return;
+                
+                const deltaX = e.clientX - startX;
+                let newLeft = startLeft + deltaX;
+                
+                newLeft = Math.max(0, Math.min(config.sliderMax, newLeft));
+                
+                onSliderInput(Math.floor(newLeft));
+            }
+            
+            function onMouseUp(e) {
+                if (!state.isDragging) return;
+                state.isDragging = false;
+                
+                document.removeEventListener('mousemove', onMouseMove);
+                document.removeEventListener('mouseup', onMouseUp);
+                
+                verifyPuzzle(state.sliderValue);
+            }
+            
+            elements.sliderButton.addEventListener('touchstart', (e) => {
+                if (state.isVerifying || state.isVerified) return;
+                state.isDragging = true;
+                startX = e.touches[0].clientX;
+                startLeft = state.sliderValue;
+            });
+            
+            document.addEventListener('touchmove', (e) => {
+                if (!state.isDragging) return;
+                
+                const deltaX = e.touches[0].clientX - startX;
+                let newLeft = startLeft + deltaX;
+                
+                newLeft = Math.max(0, Math.min(config.sliderMax, newLeft));
+                
+                onSliderInput(Math.floor(newLeft));
+            });
+            
+            document.addEventListener('touchend', () => {
+                if (!state.isDragging) return;
+                state.isDragging = false;
+                
+                verifyPuzzle(state.sliderValue);
+            });
+        }
+
+        // 初始化
+        function init() {
+            elements.verifyImage.addEventListener('load', onImageLoad);
+            elements.refreshButton.addEventListener('click', refreshVerify);
+            elements.autoVerifyButton.addEventListener('click', toggleAutoVerify);
+            
+            initSlider();
+            loadRandomImage();
+            
+            window.autoVerifyAPI = {
+                getTargetPosition: () => state.maskLeft,
+                getCurrentPosition: () => state.sliderValue,
+                isVerified: () => state.isVerified,
+                verify: autoVerify,
+                refresh: refreshVerify,
+                toggleAuto: toggleAutoVerify
+            };
+        }
+
+        init();
+    </script>
+</body>
+</html>
