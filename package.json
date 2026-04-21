@@ -1,0 +1,16 @@
+{
+  "name": "captcha-auto-verify",
+  "version": "1.0.0",
+  "description": "图片验证码自动验证工具",
+  "main": "auto-verify-puppeteer.js",
+  "scripts": {
+    "start": "node auto-verify-puppeteer.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": ["captcha", "auto-verify", "puppeteer"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer": "^21.0.0"
+  }
+}
